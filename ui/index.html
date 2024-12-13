@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Theme UI</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            zoom: 1.0;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px;
+        }
+        .nav-bar button {
+            background-color: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .nav-bar button:hover {
+            background-color: #555;
+        }
+        .pane {
+            flex-grow: 1;
+            display: none;
+            padding: 20px;
+        }
+        .pane.active {
+            display: block;
+        }
+        /* Index Pane */
+        .log-section {
+            height: 80%;
+            border: 1px solid #555;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #111;
+        }
+        .bottom-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        /* Settings Pane */
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        .settings-section label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .sensitivity-fields input {
+            width: 50px;
+            margin: 5px;
+        }
+
+        .warning {
+            color: #FFC107;
+        }
+
+        .error {
+            color: #F44336;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <button onclick="switchPane('index'); document.body.style.overflow='hidden';">Index</button>
+            <button onclick="switchPane('settings'); document.body.style.overflow='auto';">Settings</button>
+        </div>
+
+        <!-- Index Pane -->
+        <div id="index" class="pane active">
+            <div class="log-section" id="log-section">
+                <span style="text-decoration: solid; font-size: 200%; color:cyan;">Angelica Fisher v0.1.0</span>
+                <br>
+                Remember to mute BGM and configure virtual audio IO before use<br>
+                使用前請靜音 BGM 並設定虛擬音效 IO
+            </div>
+            <div class="bottom-controls">
+                <div>
+                    <input type="checkbox" style="zoom: 1.2" id="autoscroll" checked/>
+                    <label for="autoscroll">Auto-scroll</label>
+                </div>
+                <div>
+                    <input type="checkbox" style="zoom: 1.2" id="playback" oninput="setPlayback(this.value)" />
+                    <label for="playback">Play audio back to selected speakers</label>
+                </div>
+                <button id="start-stop" style="zoom: 1.2;">Start</button>
+            </div>
+        </div>
+
+        <!-- Settings Pane -->
+        <div id="settings" class="pane">
+            <div class="settings-section zoom-control">
+                <label for="zoom" id="zoom-label">Zoom: 1.0x</label>
+                <input type="range" id="zoom" min="0.5" max="2" step="0.1" value="1" oninput="adjustZoom(this.value)" />
+            </div>
+            <div>
+                <p >
+                    <button for="refresh-devices"
+                        onclick="fetchAudioDevices(document.getElementById('audio-input').value, document.getElementById('audio-output').value)"
+                        style="cursor: pointer;"
+                    >
+                        Refresh Devices
+                    </button>
+                </p>
+            </div>
+            <div class="settings-section">
+                <label for="audio-input">Audio Input:</label>
+                <select id="audio-input" oninput="setAudioInputDevice(this.value)">
+                </select>
+            </div>
+            <div class="settings-section">
+                <label for="audio-output">
+                    Audio Output:
+                    <span style="cursor: pointer;" onclick="pywebview.api.play_sound_test()"><svg fill="#d1d1d1" height="18px" width="18px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 60 60" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M45.563,29.174l-22-15c-0.307-0.208-0.703-0.231-1.031-0.058C22.205,14.289,22,14.629,22,15v30 c0,0.371,0.205,0.711,0.533,0.884C22.679,45.962,22.84,46,23,46c0.197,0,0.394-0.059,0.563-0.174l22-15 C45.836,30.64,46,30.331,46,30S45.836,29.36,45.563,29.174z M24,43.107V16.893L43.225,30L24,43.107z"></path> <path d="M30,0C13.458,0,0,13.458,0,30s13.458,30,30,30s30-13.458,30-30S46.542,0,30,0z M30,58C14.561,58,2,45.439,2,30 S14.561,2,30,2s28,12.561,28,28S45.439,58,30,58z"></path> </g> </g></svg></span>
+                </label>
+                <select id="audio-output" oninput="setAudioOutputDevice(this.value)">
+                </select>
+            </div>
+            <div class="settings-section sensitivity-fields" id="threshold-settings">
+                <label>Sound Sensitivity:</label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var ZoomLevel = 1.0;
+        var LastLogPosition = 0;
+        
+        function switchPane(paneId) {
+            document.querySelectorAll('.pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            document.getElementById(paneId).classList.add('active');
+            adjustLogSectionHeight();
+        }
+
+        const startStopButton = document.getElementById('start-stop');
+        let isRunning = false;
+
+        function logError(msg){
+            const logSection = document.getElementById('log-section');
+            logSection.innerHTML += `<hr><span style="color:red">${msg.replace(/\\n/g, '<br>')}</span><hr>`;
+        }
+
+        startStopButton.addEventListener('click', () => {
+            isRunning = !isRunning;
+            startStopButton.textContent = isRunning ? 'Stop' : 'Start';
+            if (isRunning) {
+                pywebview.api.start_fishing();
+            } else {
+                pywebview.api.stop_fishing();
+            }
+        });
+
+        function adjustZoom(val) {
+            // Update the CSS zoom level
+            ZoomLevel = val;
+            document.getElementById('zoom-label').textContent = `Zoom: ${val}x`;
+            document.body.style.setProperty('zoom', val);
+            pywebview.api.set_config('zoom', val);
+            adjustLogSectionHeight();
+        }
+
+        function adjustLogSectionHeight() {
+            const logSection = document.getElementById('log-section');
+            const containerHeight = window.innerHeight;
+            const navbarHeight = document.querySelector('.nav-bar').offsetHeight * ZoomLevel;
+            const bottomControlsHeight = document.querySelector('.bottom-controls').offsetHeight * ZoomLevel;
+
+            // Adjust height based on zoom level
+            const adjustedHeight = (containerHeight - navbarHeight - bottomControlsHeight - 80) / ZoomLevel;
+            console.log(adjustedHeight)
+            logSection.style.height = `${adjustedHeight}px`;
+        }
+        window.addEventListener('resize', adjustLogSectionHeight);
+
+        async function updateLogSection() {{
+            const ret = await pywebview.api.get_logs(LastLogPosition);
+            const logs = ret['logs'];
+            const panel = document.getElementById('log-section');
+            let npos = parseInt(ret['pos'] || 0);
+            if(LastLogPosition == npos){ return ''; }
+            let content = '';
+            let tmp = ''
+            LastLogPosition = npos;
+            console.log(logs);
+            for(let line of logs.split(/[\r\n]+/)){
+                var cls = '';
+                if(line.includes('[ERROR]')){cls = 'error';}
+                if(line.includes('[WARNING]')){cls = 'warning';}
+                if(line.includes('[INFO]')){cls = 'info';}
+                if(line.includes('[DEBUG]')){cls = 'debug';}
+                if(cls && tmp){ content += tmp + '</p>'; tmp = ''; }
+                if(!tmp){ tmp = `<p class="${cls}">${line}`; }
+                else{ tmp += `<br>${line}`}
+            }
+            panel.innerHTML += content+tmp;
+            if(document.getElementById('autoscroll').checked){
+                panel.scrollTop = panel.scrollHeight;
+            }
+            pywebview.api.set_config('last_log_pos', LastLogPosition);
+            return content;
+        }}
+
+        async function fetchAudioDevices(pref_input_index=null, pref_output_index=null) {
+            try {{
+                const devices = await pywebview.api.get_devices();
+                const inputList = document.getElementById('audio-input');
+                const outputList = document.getElementById('audio-output');
+                inputList.innerHTML = '';
+                outputList.innerHTML = '';
+                console.log(`Fetched devices: ${devices.length}`)
+                for(let d of devices){
+                    if(d.defaultSampleRate != 44100){ continue; }
+                    const option = document.createElement('option');
+                    option.value = `${d.index}`;
+                    option.textContent = `${d.name} (${d.defaultSampleRate}Hz, ${d.maxInputChannels|d.maxOutputChannels} channels)`;
+                    if (d.maxInputChannels > 0) {
+                        inputList.appendChild(option.cloneNode(true));
+                    }
+                    if (d.maxOutputChannels > 0) {
+                        outputList.appendChild(option.cloneNode(true));
+                    }
+                }
+                if(pref_input_index){ inputList.value = pref_input_index; }
+                if(pref_output_index){ outputList.value = pref_output_index; }
+            }} catch (error) {{
+                logError("Error fetching log content:", error);
+            }}
+        }
+
+        function setAudioInputDevice(val) {
+            pywebview.api.set_config('audio_input', val);
+        }
+
+        function setAudioOutputDevice(val) {
+            pywebview.api.set_config('audio_output', val);
+        }
+
+        function setTriggerThreshold(i, v){
+            pywebview.api.set_config(`fish_threshold_${i}`, v);
+        }
+
+        function setPlayback(v){
+            pywebview.api.set_config(`playback`, !!v);
+        }
+
+        function init(){
+            adjustLogSectionHeight();
+            generateThresholdSettings()
+            setup();
+        }
+        
+        async function setup(){
+            try{
+                pywebview;
+            } catch {
+                return setTimeout(setup, 100);
+            }
+            const config = await pywebview.api.get_config();
+            console.log(config);
+            adjustZoom(parseFloat(config.zoom));
+            fetchAudioDevices(config.audio_input, config.audio_output);
+            for(let i=1;i<=5;++i){
+                document.getElementById(`inp_threshold_${i}l`).value = parseInt(config[`fish_threshold_${i}l`] || 0);
+                document.getElementById(`inp_threshold_${i}h`).value = parseInt(config[`fish_threshold_${i}h`] || 0);
+            }
+            LastLogPosition = config.last_log_pos || 0;
+            document.getElementById('playback').checked = config.playback;
+            setInterval(updateLogSection, 1000);
+        }
+
+        function generateThresholdSettings(){
+            const triggerSettings = document.getElementById('threshold-settings');
+            for (let i = 1; i <= 5; i++) {
+                const p = document.createElement('p');
+                p.innerHTML = `
+                    ${i}.
+                    <input id="inp_threshold_${i}l" oninput="setTriggerThreshold('${i}l', this.value)" style="width:120px" type="number" min="0" max="100000" value="0" />
+                    ～
+                    <input id="inp_threshold_${i}h" oninput="setTriggerThreshold('${i}h', this.value)" style="width:120px" type="number" min="0" max="100000" value="0" />
+                `;
+                triggerSettings.appendChild(p);
+            }
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

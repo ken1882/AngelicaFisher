@@ -1,0 +1,7 @@
+numpy==1.24.4
+pyaudio
+pillow
+python-dotenv
+pytz
+pywin32
+requests
