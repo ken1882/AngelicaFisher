@@ -89,7 +89,6 @@ def start_listening():
         while _G.FlagRunning:
             if FlagSwapping or not InputStream or not OutputStream:
                 _G.uwait(_G.FPS)
-                print(InputStream, OutputStream)
                 continue
             data = InputStream.read(CHUNK, exception_on_overflow=False)
             if _G.Config.get('playback'):

@@ -1,6 +1,7 @@
-logs/*
-__*__/*
+**/logs
+**/__*__
 .tmp/*
 .**
 !*/.keep
 !.gitignore
+config.json

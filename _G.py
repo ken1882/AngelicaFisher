@@ -162,7 +162,7 @@ def get_lparam(val):
 def load_config():
   with open('config.json', 'r') as fp:
     return json.load(fp)
-    
+
 def save_config(config):
   with open('config.json', 'w') as fp:
     return json.dump(config, fp)

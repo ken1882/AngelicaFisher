@@ -86,6 +86,10 @@ def start_listening():
         th.start()
 
 def init():
+    if not os.path.exists('config.json'):
+        with open('config.default.json', 'r') as fp:
+            with open('config.json', 'w') as fp2:
+                fp2.write(fp.read())
     _G.Config = _G.load_config()
     if not os.path.exists(_G.logfile_name()):
         with open(_G.logfile_name(), 'a'):
