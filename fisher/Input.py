@@ -1,5 +1,5 @@
 import _G
-import win32api, win32con 
+import win32api, win32con, win32gui
 import random, math
 from time import sleep
 from _G import (resume,wait,uwait,log_debug,log_error,log_info,log_warning,make_lparam)

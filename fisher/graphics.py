@@ -21,10 +21,10 @@ def is_color_ok(cur, target, bias=None):
       return False
   return True
 
-def is_pixel_match(pix, col):
+def is_pixel_match(pix, col, sync=False):
   for i, j in zip(pix, col):
     tx, ty = i
-    if not is_color_ok(get_pixel(tx, ty), j):
+    if not is_color_ok(get_pixel(tx, ty, sync), j):
       return False
   return True
 
@@ -92,6 +92,7 @@ def take_snapshot(rect=None,filename=None):
       if depth > 5:
         raise err
       log_error("Error while taking snapshot, waiting for 5 seconds")
+      depth += 1
       wait(5)
 
 def _take_snapshot(rect,filename):

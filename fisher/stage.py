@@ -30,7 +30,7 @@ def get_current_stage():
     return _G.CurrentStage
   for key in Enum:
     stg = Enum[key]
-    if graphics.is_pixel_match(stg['pos'], stg['color']):
+    if graphics.is_pixel_match(stg['pos'], stg['color'], sync=True):
       _G.CurrentStage = key
       return key
 

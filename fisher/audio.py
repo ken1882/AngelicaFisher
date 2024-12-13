@@ -12,6 +12,49 @@ CHANNELS = 2
 RATE = 44100
 DEBUG_REWIND_SECONDS = 5
 PAUDIO = pyaudio.PyAudio()
+InputStream = None
+OutputStream = None
+Listening = False
+FlagSwapping = False
+
+def init(inp, out):
+    global InputStream, OutputStream, FlagSwapping
+    FlagSwapping = True
+    _G.wait(0.5)
+    try:
+        InputStream = PAUDIO.open(
+            format=FORMAT,
+            channels=CHANNELS,
+            rate=RATE,
+            input=True,
+            input_device_index = inp,
+            frames_per_buffer=CHUNK
+        )
+    except Exception as err:
+        _G.set_config('audio_input', 0)
+        handle_exception(err)
+        close_audio()
+        _G.log_warning("Perhaps you selected wrong device, try others")
+        FlagSwapping = False
+        return
+    try:
+        OutputStream = PAUDIO.open(
+            format=FORMAT,
+            channels=CHANNELS,
+            rate=RATE,
+            output=True,
+            output_device_index=out,
+            frames_per_buffer=CHUNK
+        )
+    except Exception as err:
+        _G.set_config('audio_output', 0)
+        handle_exception(err)
+        close_audio()
+        _G.log_warning("Perhaps you selected wrong device, try others")
+        FlagSwapping = False
+        return
+    FlagSwapping = False
+    _G.log_info("Audio ready")
 
 def play_file(file, output_index):
     try:
@@ -31,54 +74,68 @@ def play_file(file, output_index):
         stream.close()
         wf.close()
         _G.log_info(f"Finished playing: {file}")
-    
     except FileNotFoundError:
         _G.log_error(f"File not found: {file}")
     except Exception as e:
         _G.log_error(f"An error occurred while playing the file: {e}")
         handle_exception(e)
-        
 
 DebugQueue = deque(maxlen=int(RATE / CHUNK * DEBUG_REWIND_SECONDS))
 
-def listen_fishing(thresholds, input_device, output_device, playback=True):
-    _G.log_info(f"Fishing start, parameters:\nth={thresholds}\nid={input_device}\nod={output_device}\npb={playback}")
-    input_stream = PAUDIO.open(
-        format=FORMAT,
-        channels=CHANNELS,
-        rate=RATE,
-        input=True,
-        input_device_index = input_device,
-        frames_per_buffer=CHUNK
-    )
-    if playback:
-        output_stream = PAUDIO.open(
-            format=FORMAT,
-            channels=CHANNELS,
-            rate=RATE,
-            output=True,
-            output_device_index=output_device,
-            frames_per_buffer=CHUNK
-        )
+def start_listening():
+    global InputStream, OutputStream, Listening
     try:
-        while True:
-            data = input_stream.read(CHUNK, exception_on_overflow=False)
-            if playback:
-                output_stream.write(data)
+        Listening = True
+        while _G.FlagRunning:
+            if FlagSwapping or not InputStream or not OutputStream:
+                _G.uwait(_G.FPS)
+                print(InputStream, OutputStream)
+                continue
+            data = InputStream.read(CHUNK, exception_on_overflow=False)
+            if _G.Config.get('playback'):
+                audio_data = np.frombuffer(data, dtype=np.int16)
+                audio_data = (audio_data * float(_G.Config.get('volume'))).astype(np.int16)
+                data_out = audio_data.tobytes()
+                OutputStream.write(data_out)
+            if not _G.FlagWorking:
+                continue
             samples = np.frombuffer(data, dtype=np.int16)
             fft_values = np.fft.rfft(samples)
             magnitudes = np.abs(fft_values)
             m_list = [int(n) for n in magnitudes[-5:]]
             DebugQueue.append(m_list)
-            if all([v in thresholds[i] for i,v in enumerate(m_list)]):
+            thresholds = _G.ARGV.get('threshold')
+            if thresholds and all([v in  thresholds[i] for i,v in enumerate(m_list)]):
                 _G.log_info("Passed thresholds:", m_list)
-                break
+                _G.ARGV['fish_up'] = True
+    except Exception as err:
+        _G.log_error("Error while listening audio!")
+        handle_exception(err)
+        close_audio()
     finally:
-        input_stream.stop_stream()
-        input_stream.close()
-        output_stream.stop_stream()
-        output_stream.close()
-    return True
+        _G.log_info("Audio loop exited")
+        Listening = False
+        close_audio()
 
 def list_devices():
     return [PAUDIO.get_device_info_by_index(i) for i in range(PAUDIO.get_device_count())]
+
+def close_audio():
+    global InputStream, OutputStream, FlagSwapping
+    FlagSwapping = True
+    _G.wait(0.5)
+    _G.log_info("Audio closing")
+    if InputStream:
+        InputStream.stop_stream()
+        InputStream.close()
+    if OutputStream:
+        OutputStream.stop_stream()
+        OutputStream.close()
+    InputStream = None
+    OutputStream = None
+
+def export_wave(filename):
+    global DebugQueue
+    with open(filename, 'a') as fp:
+        fp.write('\n'.join([str([int(n) for n in ar]) for ar in DebugQueue]))
+        fp.write('\n'+'-'*30+'\n')

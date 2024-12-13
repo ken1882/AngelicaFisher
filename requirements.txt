@@ -5,3 +5,4 @@ python-dotenv
 pytz
 pywin32
 requests
+pywebview
