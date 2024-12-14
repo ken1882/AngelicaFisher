@@ -6,7 +6,7 @@ Automated fishing for Angelica Aster.
 2. 啟動遊戲 DMP，並將輸出裝置如下圖調為虛擬音效輸出，且音量拉滿 (100)。
 <img src="https://media.discordapp.net/attachments/251324194854273026/1317132069964611584/image.png?ex=675d9254&is=675c40d4&hm=dd68945d72ee4c1578b4fc96a72171226b1422a0ab858b43169e14d4dafafe33&=&format=webp&quality=lossless&width=807&height=249">
 
-3. 打開程式後，調整設定(Settings)，將音效輸入(Audio Input) 改為虛擬音效輸入，將音效輸出(Audio Output)改為常用的輸出設備(如喇叭、耳機...)，可點及旁邊撥放按鈕測試輸出設備。
+3. 打開程式後，調整設定(Settings)，將音效輸入(Audio Input) 改為虛擬音效輸入，將音效輸出(Audio Output)改為常用的輸出設備(如喇叭、耳機...)，可點及旁邊撥放按鈕測試輸出設備。如果設定正確，在 playback 打開下應該**要能聽到遊戲內的聲音**。
 4. 將遊戲內 BGM 靜音，SE 音量拉滿，並前往釣魚畫面。
 5. 回到首頁(Index)，點擊右下角 Start/Stop，開始釣魚。
 
@@ -23,7 +23,7 @@ Automated fishing for Angelica Aster.
 2. Launch DMP version of the game, and change process audio output to virtual output as follow, set the volume to 100.
 <img src="https://media.discordapp.net/attachments/251324194854273026/1317132069964611584/image.png?ex=675d9254&is=675c40d4&hm=dd68945d72ee4c1578b4fc96a72171226b1422a0ab858b43169e14d4dafafe33&=&format=webp&quality=lossless&width=807&height=249">
 
-3. Starting the program and go to settings, change the `Audio Input` to virtual input, `Audio Output` to your output device (e.g. speakers, earphones...), you can click the play button next to it to test the device selected.
+3. Starting the program and go to settings, change the `Audio Input` to virtual input, `Audio Output` to your output device (e.g. speakers, earphones...), you can click the play button next to it to test the device selected. If you setup correctly, **you should be able to hear the game audio still.**
 4. Inside the game, mute BGM and change the SE to max volume. And go to fishing.
 5. Back to the index page of the program, click the Start/Stop in bottom-right corner, profit.
 
